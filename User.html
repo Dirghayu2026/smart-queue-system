@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Join Queue</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI'; background: #0a0a0a; color: #e0e0e0; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .user-container { max-width: 500px; width: 100%; margin: auto; }
+        .card { background: #111; border: 2px solid #ff6b00; border-radius: 20px; padding: 30px; }
+        .title { color: #ff6b00; font-size: 28px; text-align: center; margin-bottom: 25px; font-weight: bold; }
+        input { width: 100%; padding: 16px; margin: 10px 0; background: #1a1a1a; border: 2px solid #2a2a2a; color: white; border-radius: 12px; font-size: 18px; }
+        input:focus { outline: none; border-color: #ff6b00; }
+        .chips-container { display: flex; flex-wrap: wrap; gap: 10px; margin: 15px 0; }
+        .chip { display: inline-block; padding: 12px 20px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 40px; cursor: pointer; font-size: 14px; transition: 0.2s; }
+        .chip.selected { background: #ff6b00; color: #000; border-color: #ff6b00; }
+        button { background: #ff6b00; color: white; border: none; padding: 16px; border-radius: 12px; font-size: 18px; font-weight: bold; width: 100%; margin-top: 20px; cursor: pointer; transition: 0.2s; }
+        button:hover { transform: scale(1.01); }
+        .info-box { background: #1a1a1a; padding: 15px; border-radius: 12px; margin-top: 20px; text-align: center; }
+        .token-number { font-size: 64px; color: #ff6b00; text-align: center; font-family: monospace; margin: 20px 0; }
+        .status-box { text-align: center; padding: 15px; border-radius: 12px; margin: 15px 0; font-weight: bold; font-size: 20px; }
+        .bg-turn { background: #00c853; color: #000; animation: glow 1s infinite; }
+        .bg-almost { background: #ff9800; color: #000; }
+        .bg-upcoming { background: #2196f3; color: white; }
+        .bg-waiting { background: #424242; color: white; }
+        .info-dashboard { background: #1a1a1a; padding: 18px; border-radius: 12px; margin: 15px 0; }
+        .toast { position: fixed; top: 20px; right: 20px; background: #333; padding: 12px 20px; border-radius: 8px; border-left: 4px solid #ff6b00; z-index: 1000; animation: slideIn 0.3s; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes glow { 0% { box-shadow: 0 0 5px #00ff88; } 50% { box-shadow: 0 0 20px #00ff88; } 100% { box-shadow: 0 0 5px #00ff88; } }
+        @media (max-width: 768px) { .card { padding: 20px; } .title { font-size: 24px; } .token-number { font-size: 48px; } }
+    </style>
+</head>
+<body>
+<div class="user-container" id="app">Loading...</div>
+
+<script>
+    // 🔥 YAHI CONFIG PASTE KARO (admin wali same)
+   const firebaseConfig = {
+  apiKey: "AIzaSyCFNZB5SBj2QoBJ6qF_pTkfAC3rVymEahM",
+  authDomain: "queuesystem-80e06.firebaseapp.com",
+  projectId: "queuesystem-80e06",
+  storageBucket: "queuesystem-80e06.firebasestorage.app",
+  messagingSenderId: "30275507505",
+  appId: "1:30275507505:web:d00cc742ed42bb6f370c10",
+  measurementId: "G-54G6CL3L5Y"
+};
+    // =============================================
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const queueRef = db.collection('queue');
+    const servingRef = db.collection('meta').doc('currentServing');
+
+    let myToken = null, myName = '', myPurpose = '', isJoined = false, toastMsg = null;
+    let queue = [], currentServing = null;
+
+    function showToast(msg) { toastMsg = msg; render(); setTimeout(() => { toastMsg = null; render(); }, 2500); }
+
+    // Real-time listeners
+    queueRef.orderBy('timestamp', 'asc').onSnapshot(snapshot => {
+        queue = []; snapshot.forEach(doc => queue.push({ id: doc.id, ...doc.data() }));
+        if (isJoined) render();
+    });
+    servingRef.onSnapshot(doc => {
+        currentServing = doc.exists ? doc.data().token : null;
+        if (isJoined) render();
+    });
+
+    async function joinQueue() {
+        if (!myName.trim()) { showToast('Please enter your name'); return; }
+        if (!myPurpose) { showToast('Select a purpose'); return; }
+        const snapshot = await queueRef.get();
+        const token = 'T' + (snapshot.size + 1).toString().padStart(3, '0');
+        await queueRef.add({
+            token, name: myName.trim(), purpose: myPurpose,
+            joinTime: new Date().toLocaleTimeString(),
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        // log
+        const logsRef = db.collection('logs');
+        await logsRef.add({ time: new Date().toLocaleTimeString(), action: 'JOINED', detail: `${myName} (${token}) - ${myPurpose}`, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+        myToken = token;
+        isJoined = true;
+        showToast(`✅ Token ${token} assigned!`);
+        render();
+    }
+
+    function resetJoin() { isJoined = false; myToken = null; myName = ''; myPurpose = ''; render(); }
+
+    function getPosition() { if (!myToken) return null; const idx = queue.findIndex(i => i.token === myToken); return idx !== -1 ? idx + 1 : null; }
+    function getStatus() {
+        if (currentServing === myToken) return 'turn';
+        const pos = getPosition();
+        if (pos === 1) return 'almost';
+        if (pos <= 3) return 'upcoming';   // 2-3 log aage
+        return 'waiting';
+    }
+    function getAhead() { const pos = getPosition(); return pos ? pos - 1 : 0; }
+
+    function render() {
+        if (!isJoined) {
+            document.getElementById('app').innerHTML = `
+                ${toastMsg ? `<div class="toast">${toastMsg}</div>` : ''}
+                <div class="card">
+                    <div class="title">🎫 Join Queue</div>
+                    <input type="text" id="nameInput" placeholder="Full name" autocomplete="off" value="${myName.replace(/"/g, '&quot;')}">
+                    <div class="chips-container" id="purposeContainer">
+                        <span class="chip ${myPurpose === 'Fee Payment' ? 'selected' : ''}" data-purpose="Fee Payment">💰 Fee Payment</span>
+                        <span class="chip ${myPurpose === 'Document Submission' ? 'selected' : ''}" data-purpose="Document Submission">📄 Document Submission</span>
+                        <span class="chip ${myPurpose === 'Refund Request' ? 'selected' : ''}" data-purpose="Refund Request">💰 Refund Request</span>
+                        <span class="chip ${myPurpose === 'Certificate Collection' ? 'selected' : ''}" data-purpose="Certificate Collection">📜 Certificate Collection</span>
+                        <span class="chip ${myPurpose === 'Enquiry' ? 'selected' : ''}" data-purpose="Enquiry">❓ Enquiry</span>
+                    </div>
+                    <button id="joinBtn">🎟️ GET TOKEN →</button>
+                    <div class="info-box"><p>⏱️ Wait: <strong>~${queue.length * 5} min</strong></p><p>👥 In queue: <strong>${queue.length}</strong></p><p>📋 Serving: <strong>${currentServing || '—'}</strong></p></div>
+                </div>
+            `;
+            document.getElementById('nameInput').oninput = e => myName = e.target.value;
+            document.querySelectorAll('.chip').forEach(chip => {
+                chip.onclick = () => {
+                    document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+                    chip.classList.add('selected');
+                    myPurpose = chip.getAttribute('data-purpose');
+                };
+            });
+            document.getElementById('joinBtn').onclick = e => { e.preventDefault(); joinQueue(); };
+        } else {
+            const ahead = getAhead();
+            const status = getStatus();
+            let statusText = 'WAITING', statusClass = 'bg-waiting';
+            if (status === 'turn') { statusText = '✨ YOUR TURN – GO NOW ✨'; statusClass = 'bg-turn'; }
+            else if (status === 'almost') { statusText = '⚠️ ALMOST THERE (1 person ahead) – Be ready!'; statusClass = 'bg-almost'; }
+            else if (status === 'upcoming') { statusText = '🔵 GET READY – Within 3 people'; statusClass = 'bg-upcoming'; }
+            document.getElementById('app').innerHTML = `
+                ${toastMsg ? `<div class="toast">${toastMsg}</div>` : ''}
+                <div class="card">
+                    <div class="title">🎯 Your Status</div>
+                    <div class="token-number">${myToken}</div>
+                    <div class="status-box ${statusClass}">${statusText}</div>
+                    <div class="info-dashboard">
+                        <p>👤 Serving now: <strong>${currentServing || '—'}</strong></p>
+                        <p>👥 People ahead: <strong>${ahead}</strong></p>
+                        <p>⏱️ Est. wait: <strong>${ahead * 5} min</strong></p>
+                    </div>
+                    <button onclick="resetJoin()" style="background:#2a2a2a;">← Join Another Queue</button>
+                </div>
+            `;
+        }
+    }
+    render();
+</script>
+</body>
+</html>

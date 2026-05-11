@@ -1,0 +1,273 @@
+/* Dark Industrial Theme */
+:root {
+  --bg-dark: #0a0a0a;
+  --bg-card: #141414;
+  --bg-elevated: #1a1a1a;
+  --accent-amber: #f5a623;
+  --accent-amber-glow: rgba(245, 166, 35, 0.4);
+  --neon-green: #00ff88;
+  --neon-orange: #ff6b35;
+  --neon-blue: #00b4d8;
+  --status-waiting: #6c757d;
+  --status-upcoming: #007bff;
+  --status-almost: #ff6b35;
+  --status-turn: #00ff88;
+  --danger-red: #dc3545;
+  --success-green: #28a745;
+  --warning-yellow: #ffc107;
+}
+
+body {
+  background: var(--bg-dark);
+  color: #e0e0e0;
+}
+
+/* Typography */
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&family=Share+Tech+Mono&display=swap');
+
+h1, h2, h3, .display-large {
+  font-family: 'Bebas Neue', cursive;
+  letter-spacing: 2px;
+}
+
+body, p, button, input, select, textarea {
+  font-family: 'DM Sans', sans-serif;
+}
+
+.token-number, .timestamp, .mono-text {
+  font-family: 'Share Tech Mono', monospace;
+}
+
+/* Animations */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes glowPulse {
+  0% {
+    box-shadow: 0 0 5px var(--neon-green);
+  }
+  50% {
+    box-shadow: 0 0 20px var(--neon-green), 0 0 30px var(--neon-green);
+  }
+  100% {
+    box-shadow: 0 0 5px var(--neon-green);
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.glow-effect {
+  animation: glowPulse 1.5s ease-in-out infinite;
+}
+
+.bounce-effect {
+  animation: bounce 0.5s ease-in-out;
+}
+
+/* Utility Classes */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.grid-2cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 768px) {
+  .grid-2cols {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 24px;
+  border: 1px solid rgba(245, 166, 35, 0.2);
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.btn-primary {
+  background: var(--accent-amber);
+  color: #0a0a0a;
+}
+
+.btn-primary:hover {
+  background: #e8950f;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(245, 166, 35, 0.3);
+}
+
+.btn-success {
+  background: var(--success-green);
+  color: white;
+}
+
+.btn-danger {
+  background: var(--danger-red);
+  color: white;
+}/* Dark Industrial Theme */
+:root {
+  --bg-dark: #0a0a0a;
+  --bg-card: #141414;
+  --bg-elevated: #1a1a1a;
+  --accent-amber: #f5a623;
+  --accent-amber-glow: rgba(245, 166, 35, 0.4);
+  --neon-green: #00ff88;
+  --neon-orange: #ff6b35;
+  --neon-blue: #00b4d8;
+  --status-waiting: #6c757d;
+  --status-upcoming: #007bff;
+  --status-almost: #ff6b35;
+  --status-turn: #00ff88;
+  --danger-red: #dc3545;
+  --success-green: #28a745;
+  --warning-yellow: #ffc107;
+}
+
+body {
+  background: var(--bg-dark);
+  color: #e0e0e0;
+}
+
+/* Typography */
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&family=Share+Tech+Mono&display=swap');
+
+h1, h2, h3, .display-large {
+  font-family: 'Bebas Neue', cursive;
+  letter-spacing: 2px;
+}
+
+body, p, button, input, select, textarea {
+  font-family: 'DM Sans', sans-serif;
+}
+
+.token-number, .timestamp, .mono-text {
+  font-family: 'Share Tech Mono', monospace;
+}
+
+/* Animations */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes glowPulse {
+  0% {
+    box-shadow: 0 0 5px var(--neon-green);
+  }
+  50% {
+    box-shadow: 0 0 20px var(--neon-green), 0 0 30px var(--neon-green);
+  }
+  100% {
+    box-shadow: 0 0 5px var(--neon-green);
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.glow-effect {
+  animation: glowPulse 1.5s ease-in-out infinite;
+}
+
+.bounce-effect {
+  animation: bounce 0.5s ease-in-out;
+}
+
+/* Utility Classes */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.grid-2cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 768px) {
+  .grid-2cols {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 24px;
+  border: 1px solid rgba(245, 166, 35, 0.2);
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.btn-primary {
+  background: var(--accent-amber);
+  color: #0a0a0a;
+}
+
+.btn-primary:hover {
+  background: #e8950f;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(245, 166, 35, 0.3);
+}
+
+.btn-success {
+  background: var(--success-green);
+  color: white;
+}
+
+.btn-danger {
+  background: var(--danger-red);
+  color: white;
+}
