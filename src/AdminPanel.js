@@ -20,25 +20,30 @@ const AdminPanel = ({
 }) => {
   const [showQR, setShowQR] = useState(false);
 
+  // 🔴 तुमची RENDER LINK - खात्री करा की ही बरोबर आहे
+  const API_URL = "https://smart-queue-system-o7hh.onrender.com";
+
   // 📞 UPDATED TRIGGER VOICE CALL FUNCTION
   const triggerVoiceCall = async (visitor) => {
-    // Firebase madhe phone kiva phoneNumber asu shakto, mhanun donhi check kara
+    // Firebase मधील संभाव्य फील्ड नावे चेक करा
     const number = visitor?.phone || visitor?.phoneNumber;
-    const name = visitor?.name || "Guest";
+    const name = visitor?.name || visitor?.studentName || "Guest";
 
     if (!number) {
       console.error("Number sapdla nahi:", visitor);
+      // जरी नंबर नसेल, तरी किमान ब्राउझरमध्ये आवाज येईल
+      speakAlert(name);
       return;
     }
 
     try {
       console.log("Calling via React:", name, number);
       
-      const response = await fetch('http://localhost:5000/make-call', { 
+      const response = await fetch(`${API_URL}/make-call`, { 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          phone: number, // Backend la 'phone' naavanech data pahije
+          phone: number, 
           name: name 
         }),
       });
@@ -46,11 +51,25 @@ const AdminPanel = ({
       const data = await response.json();
       if (data.success) {
         console.log("Call Successful, SID:", data.sid);
+        speakAlert(name); // यशस्वी कॉल झाल्यावर आवाज
       } else {
         console.error("Twilio Error from Backend:", data.error);
+        speakAlert(name); // एरर आला तरी बॅकअप म्हणून आवाज
       }
     } catch (error) {
       console.error("Voice call server connection error:", error);
+      speakAlert(name); // नेटवर्क एरर आला तरी बॅकअप म्हणून आवाज
+    }
+  };
+
+  // 🔊 ब्राउझरमधून येणारा आवाज (Voice Alert)
+  const speakAlert = (name) => {
+    if ('speechSynthesis' in window) {
+      const msg = new SpeechSynthesisUtterance();
+      msg.text = `Attention ${name}, please proceed to the counter. Your turn has arrived.`;
+      msg.lang = 'en-US';
+      msg.rate = 0.9; 
+      window.speechSynthesis.speak(msg);
     }
   };
 
@@ -74,9 +93,7 @@ const AdminPanel = ({
                 onClick={() => {
                   if (queue && queue.length > 0) {
                     const nextVisitor = queue[0];
-                    // Pahile calling trigger kara
                     triggerVoiceCall(nextVisitor);
-                    // Mag queue madhun delete/next kara
                     onCallNext();
                   } else {
                     alert("Queue is empty!");
@@ -108,6 +125,8 @@ const AdminPanel = ({
                 ) : (
                 queue.map((visitor, idx) => {
                     const badge = getStatusBadge(idx + 1, visitor.token);
+                    // 'name' किंवा 'studentName' जे डेटाबेसमध्ये असेल ते दाखवा
+                    const displayName = visitor.name || visitor.studentName || "Unknown Student";
                     return (
                     <div key={visitor.id || idx} style={{ 
                         padding: '15px', 
@@ -117,7 +136,7 @@ const AdminPanel = ({
                         alignItems: 'center'
                     }}>
                         <div>
-                            <strong style={{ fontSize: '1.2em', color: '#ff6b00' }}>{visitor.token}</strong> - {visitor.name}
+                            <strong style={{ fontSize: '1.2em', color: '#ff6b00' }}>{visitor.token}</strong> - {displayName}
                             <div style={{ fontSize: '0.8em', color: '#888' }}>{visitor.purpose}</div>
                         </div>
                         <span style={{ 
