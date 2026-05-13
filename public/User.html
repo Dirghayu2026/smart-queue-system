@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join Queue - Smart System</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI'; background: #0a0a0a; color: #e0e0e0; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .user-container { max-width: 500px; width: 100%; margin: auto; }
+        .card { background: #111; border: 2px solid #ff6b00; border-radius: 20px; padding: 30px; }
+        .title { color: #ff6b00; font-size: 28px; text-align: center; margin-bottom: 25px; font-weight: bold; }
+        input { width: 100%; padding: 16px; margin: 10px 0; background: #1a1a1a; border: 2px solid #2a2a2a; color: white; border-radius: 12px; font-size: 18px; }
+        input:focus { outline: none; border-color: #ff6b00; }
+        .chips-container { display: flex; flex-wrap: wrap; gap: 10px; margin: 15px 0; }
+        .chip { display: inline-block; padding: 12px 20px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 40px; cursor: pointer; font-size: 14px; transition: 0.2s; }
+        .chip.selected { background: #ff6b00; color: #000; border-color: #ff6b00; }
+        button { background: #ff6b00; color: white; border: none; padding: 16px; border-radius: 12px; font-size: 18px; font-weight: bold; width: 100%; margin-top: 20px; cursor: pointer; transition: 0.2s; }
+        .status-box { text-align: center; padding: 15px; border-radius: 12px; margin: 15px 0; font-weight: bold; font-size: 20px; }
+        .bg-waiting { background: #424242; color: white; }
+        .toast { position: fixed; top: 20px; right: 20px; background: #333; padding: 12px 20px; border-radius: 8px; border-left: 4px solid #ff6b00; z-index: 1000; }
+    </style>
+</head>
+<body>
+<div class="user-container" id="app">Loading...</div>
+
+<script>
+    // 🔥 Firebase Config (Same as yours)
+    const firebaseConfig = {
+        apiKey: "AIzaSyCFNZB5SBj2QoBJ6qF_pTkfAC3rVymEahM",
+        authDomain: "queuesystem-80e06.firebaseapp.com",
+        projectId: "queuesystem-80e06",
+        storageBucket: "queuesystem-80e06.firebasestorage.app",
+        messagingSenderId: "30275507505",
+        appId: "1:30275507505:web:d00cc742ed42bb6f370c10"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const queueRef = db.collection('queue');
+
+    let myToken = null, myName = '', myPhone = '', myPurpose = '', isJoined = false;
+
+    async function joinQueue() {
+        if (!myName.trim() || !myPhone.trim() || !myPurpose) {
+            alert("Sagle details bhara!");
+            return;
+        }
+
+        const snapshot = await queueRef.get();
+        const token = 'T' + (snapshot.size + 1).toString().padStart(3, '0');
+
+        const userData = {
+            token: token,
+            name: myName.trim(),
+            phone: myPhone.trim(), // Twilio calling sathi garjeche
+            purpose: myPurpose,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        try {
+            await queueRef.add(userData);
+            myToken = token;
+            isJoined = true;
+            render();
+        } catch (e) {
+            console.error("Error adding visitor: ", e);
+        }
+    }
+
+    function render() {
+        const app = document.getElementById('app');
+        if (!isJoined) {
+            app.innerHTML = `
+                <div class="card">
+                    <div class="title">🎫 Join Queue</div>
+                    <input type="text" id="nameInp" placeholder="Enter Name" value="${myName}">
+                    <input type="tel" id="phoneInp" placeholder="Mobile (+91XXXXXXXXXX)" value="${myPhone}">
+                    
+                    <div class="chips-container">
+                        <span class="chip ${myPurpose === 'Enquiry' ? 'selected' : ''}" onclick="setPurpose('Enquiry')">❓ Enquiry</span>
+                        <span class="chip ${myPurpose === 'Fee Payment' ? 'selected' : ''}" onclick="setPurpose('Fee Payment')">💰 Fees</span>
+                    </div>
+
+                    <button onclick="joinQueue()">🎟️ GET TOKEN</button>
+                </div>
+            `;
+            document.getElementById('nameInp').oninput = e => myName = e.target.value;
+            document.getElementById('phoneInp').oninput = e => myPhone = e.target.value;
+        } else {
+            app.innerHTML = `
+                <div class="card">
+                    <div class="title">🎯 Your Token</div>
+                    <h1 style="font-size: 60px; text-align: center; color: #ff6b00;">${myToken}</h1>
+                    <div class="status-box bg-waiting">Status: WAITING</div>
+                    <p style="text-align:center;">Please wait for your call.</p>
+                </div>
+            `;
+        }
+    }
+
+    window.setPurpose = (p) => { myPurpose = p; render(); };
+    render();
+</script>
+</body>
+</html>

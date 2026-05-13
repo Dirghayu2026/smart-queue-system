@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { PURPOSES, STATUS_CONFIG } from '../utils/constants';
-import { formatWaitTime } from '../utils/helpers';
+import { PURPOSES, STATUS_CONFIG } from './constants';
+import { formatWaitTime } from './helpers';
 import ToastNotification from './ToastNotification';
 
 const VisitorPanel = ({ 
