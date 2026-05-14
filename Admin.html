@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Queue Command Center | Admin</title>
+    <title>Smart Queue - Elite Admin Command Center</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -12,8 +12,6 @@
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
         body { background: #08090a; color: #f8fafc; font-family: 'Plus Jakarta Sans', sans-serif; }
         .glass-panel { background: rgba(17, 18, 20, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
-        .stat-card { transition: transform 0.2s; border-left: 4px solid transparent; }
-        .stat-card:hover { transform: translateY(-5px); border-left-color: #f97316; }
         .serving-glow { text-shadow: 0 0 20px rgba(249, 115, 22, 0.4); }
         .custom-scroll::-webkit-scrollbar { width: 4px; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
@@ -21,7 +19,6 @@
 </head>
 <body class="min-h-screen">
 
-    <!-- 🌐 SIDEBAR NAVIGATION (DUMMY FOR UI) -->
     <div class="fixed left-0 top-0 h-full w-20 flex flex-col items-center py-8 glass-panel border-r">
         <div class="w-12 h-12 bg-orange-500 rounded-2xl flex items-center justify-center mb-10 shadow-lg shadow-orange-500/20">
             <i class="fas fa-bolt text-black text-xl"></i>
@@ -29,15 +26,11 @@
         <div class="flex flex-col gap-8 text-zinc-500">
             <i class="fas fa-th-large text-orange-500"></i>
             <i class="fas fa-users"></i>
-            <i class="fas fa-chart-pie"></i>
             <i class="fas fa-cog"></i>
         </div>
     </div>
 
-    <!-- 📊 MAIN CONTENT -->
     <main class="ml-24 p-8">
-        
-        <!-- HEADER -->
         <header class="flex justify-between items-end mb-10">
             <div>
                 <h1 class="text-3xl font-extrabold tracking-tight">Queue <span class="text-orange-500">Dashboard</span></h1>
@@ -45,78 +38,72 @@
             </div>
             <div class="flex items-center gap-4">
                 <div class="text-right mr-4">
-                    <p class="text-[10px] text-zinc-500 font-bold uppercase">System Status</p>
-                    <p class="text-xs text-green-500 font-bold flex items-center gap-2">
-                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> OPERATIONAL
+                    <p class="text-[10px] text-zinc-500 font-bold uppercase">Current Status</p>
+                    <p id="systemStatusText" class="text-xs text-green-500 font-bold flex items-center gap-2">
+                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> COUNTER LIVE
                     </p>
                 </div>
-                <button onclick="location.reload()" class="w-10 h-10 rounded-xl glass-panel flex items-center justify-center hover:bg-zinc-800 transition-all">
-                    <i class="fas fa-sync-alt text-xs"></i>
-                </button>
             </div>
         </header>
 
         <div class="grid grid-cols-12 gap-6">
             
-            <!-- TOP STATS -->
-            <div class="col-span-12 lg:col-span-8 grid grid-cols-3 gap-6">
-                <div class="stat-card glass-panel p-6 rounded-3xl">
-                    <p class="text-zinc-500 text-xs font-bold uppercase mb-2">Total Tokens</p>
-                    <h2 id="totalTokens" class="text-4xl font-extrabold">0</h2>
-                </div>
-                <div class="stat-card glass-panel p-6 rounded-3xl">
-                    <p class="text-zinc-500 text-xs font-bold uppercase mb-2">In Waiting</p>
-                    <h2 id="waitingCount" class="text-4xl font-extrabold text-orange-500">0</h2>
-                </div>
-                <div class="stat-card glass-panel p-6 rounded-3xl">
-                    <p class="text-zinc-500 text-xs font-bold uppercase mb-2">Completed</p>
-                    <h2 id="completedCount" class="text-4xl font-extrabold text-green-500">0</h2>
+            <div class="col-span-12 lg:col-span-8 glass-panel p-6 rounded-3xl">
+                <h3 class="text-sm font-bold mb-4 flex items-center gap-2 text-orange-500">
+                    <i class="fas fa-toggle-on"></i> Counter Management Status
+                </h3>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <button onclick="setCounterStatus('LIVE', 'bg-green-500/10 text-green-500 border-green-500/30')" class="py-4 rounded-xl bg-green-600 hover:bg-green-500 text-black font-black text-xs uppercase tracking-wider transition-all">
+                        <i class="fas fa-check-circle mr-1"></i> Live / Open
+                    </button>
+                    <button onclick="setCounterStatus('LUNCH BREAK', 'bg-yellow-500/10 text-yellow-500 border-yellow-500/30')" class="py-4 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-yellow-500 text-yellow-500 font-black text-xs uppercase tracking-wider transition-all">
+                        <i class="fas fa-utensils mr-1"></i> Lunch Break
+                    </button>
+                    <button onclick="setCounterStatus('TEA BREAK', 'bg-orange-500/10 text-orange-500 border-orange-500/30')" class="py-4 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-orange-500 text-orange-500 font-black text-xs uppercase tracking-wider transition-all">
+                        <i class="fas fa-coffee mr-1"></i> Tea Break
+                    </button>
+                    <button onclick="setCounterStatus('COUNTER CLOSED', 'bg-red-500/10 text-red-500 border-red-500/30')" class="py-4 rounded-xl bg-zinc-900 border border-zinc-800 hover:border-red-500 text-red-500 font-black text-xs uppercase tracking-wider transition-all">
+                        <i class="fas fa-times-circle mr-1"></i> Closed
+                    </button>
                 </div>
 
-                <!-- 📢 BROADCAST SECTION -->
-                <div class="col-span-3 glass-panel p-6 rounded-3xl mt-2">
-                    <h3 class="text-sm font-bold mb-4 flex items-center gap-2">
-                        <i class="fas fa-bullhorn text-orange-500"></i> Broadcast Announcement
+                <div class="mt-6 border-t border-white/5 pt-6">
+                    <h3 class="text-sm font-bold mb-3 flex items-center gap-2">
+                        <i class="fas fa-bullhorn text-orange-500"></i> Manual Notice Broadcast
                     </h3>
                     <div class="flex gap-4">
-                        <input type="text" id="noticeInput" placeholder="Enter message for student screens..." 
+                        <input type="text" id="noticeInput" placeholder="Type custom message for students..." 
                             class="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm focus:border-orange-500 outline-none">
                         <button onclick="sendNotice()" class="px-8 bg-orange-600 hover:bg-orange-500 text-black font-bold rounded-xl transition-all">PUBLISH</button>
                     </div>
                 </div>
             </div>
 
-            <!-- SERVING PANEL -->
-            <div class="col-span-12 lg:col-span-4">
+            <div class="col-span-12 lg:col-span-4 row-span-2">
                 <div class="glass-panel p-8 rounded-[2.5rem] border-2 border-orange-500/20 flex flex-col items-center justify-center h-full relative overflow-hidden">
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 blur-3xl rounded-full"></div>
                     <p class="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-4">Now Serving</p>
                     <div id="servingNumber" class="text-9xl font-black text-white serving-glow mb-8 tracking-tighter">--</div>
-                    <button onclick="callNext()" class="w-full py-5 bg-orange-600 hover:bg-orange-500 text-white font-black rounded-2xl shadow-xl shadow-orange-900/20 transform active:scale-95 transition-all">
+                    <button onclick="callNext()" class="w-full py-5 bg-orange-600 hover:bg-orange-500 text-white font-black rounded-2xl shadow-xl transform active:scale-95 transition-all">
                         NEXT TOKEN <i class="fas fa-arrow-right ml-2"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- DATA TABLE: WAITING LIST -->
-            <div class="col-span-12 glass-panel rounded-3xl overflow-hidden">
+            <div class="col-span-12 lg:col-span-8 glass-panel rounded-3xl overflow-hidden">
                 <div class="p-6 border-b border-white/5 flex justify-between items-center bg-white/5">
-                    <h3 class="font-bold">Live Waiting List</h3>
+                    <h3 class="font-bold">Live Waiting List (<span id="waitingCount">0</span>)</h3>
                     <button onclick="clearQueue()" class="text-red-500 text-xs font-bold hover:underline">RESET QUEUE</button>
                 </div>
-                <div class="overflow-x-auto h-[400px] custom-scroll">
+                <div class="overflow-x-auto h-[300px] custom-scroll">
                     <table class="w-full text-left border-collapse">
                         <thead class="text-zinc-500 text-[10px] uppercase font-black bg-black/20">
                             <tr>
                                 <th class="px-8 py-4">Token</th>
                                 <th class="px-8 py-4">Student Name</th>
                                 <th class="px-8 py-4">Purpose</th>
-                                <th class="px-8 py-4 text-right">Status</th>
                             </tr>
                         </thead>
-                        <tbody id="queueTable" class="text-sm">
-                            <!-- Rows will be injected here -->
-                        </tbody>
+                        <tbody id="queueTable" class="text-sm"></tbody>
                     </table>
                 </div>
             </div>
@@ -125,53 +112,63 @@
     </main>
 
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyCFNZB5SBj2QoBJ6qF_pTkfAC3rVymEahM",
-            authDomain: "queuesystem-80e06.firebaseapp.com",
-            projectId: "queuesystem-80e06",
-            storageBucket: "queuesystem-80e06.firebasestorage.app",
-            messagingSenderId: "30275507505",
-            appId: "1:30275507505:web:d00cc742ed42bb6f370c10"
+        const firebaseConfig = { 
+            apiKey: "AIzaSyCFNZB5SBj2QoBJ6qF_pTkfAC3rVymEahM", 
+            authDomain: "queuesystem-80e06.firebaseapp.com", 
+            projectId: "queuesystem-80e06", 
+            storageBucket: "queuesystem-80e06.firebasestorage.app", 
+            messagingSenderId: "30275507505", 
+            appId: "1:30275507505:web:d00cc742ed42bb6f370c10" 
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
         let queue = [];
-        let completed = 0;
 
-        // REAL-TIME UPDATES
+        // १. रिअल-टाइम डेटा टेबल लोड करणे
         db.collection('queue').orderBy('timestamp', 'asc').onSnapshot(snap => {
-            queue = [];
-            let html = "";
+            queue = []; let html = "";
             snap.forEach(doc => {
-                const data = doc.data();
-                queue.push({id: doc.id, ...data});
+                const data = doc.data(); queue.push({id: doc.id, ...data});
                 html += `
                     <tr class="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
                         <td class="px-8 py-4 font-black text-orange-500 text-lg">#${data.token}</td>
                         <td class="px-8 py-4 font-bold text-zinc-200">${data.name}</td>
                         <td class="px-8 py-4 text-zinc-500 text-xs">${data.purpose}</td>
-                        <td class="px-8 py-4 text-right"><span class="px-3 py-1 bg-orange-500/10 text-orange-500 rounded-full text-[10px] font-black">WAITING</span></td>
                     </tr>`;
             });
-            document.getElementById('queueTable').innerHTML = html || "<tr><td colspan='4' class='p-10 text-center text-zinc-600'>No students in queue</td></tr>";
+            document.getElementById('queueTable').innerHTML = html || "<tr><td colspan='3' class='p-10 text-center text-zinc-600'>No students in queue</td></tr>";
             document.getElementById('waitingCount').innerText = queue.length;
-            document.getElementById('totalTokens').innerText = 100 + queue.length + completed;
         });
 
         db.collection('meta').doc('currentServing').onSnapshot(doc => {
             document.getElementById('servingNumber').innerText = doc.exists ? doc.data().token : "--";
         });
 
-        // ACTIONS
+        // ⚡ २. क्यु स्टेटस चेंज करणारे फंक्शन (Firebase मध्ये स्टेटस पुश होईल)
+        async function setCounterStatus(status, classes) {
+            let message = `Counter Status Updated: ${status}`;
+            if(status === 'LUNCH BREAK') message = "📢 Lunch Break Active. Counter will resume soon.";
+            if(status === 'TEA BREAK') message = "📢 Tea Break Active. Please hold on for 10 mins.";
+            if(status === 'COUNTER CLOSED') message = "⚠️ Counter Closed for the day.";
+            if(status === 'LIVE') message = "✅ Counter Open. Welcome Students!";
+
+            // ॲडमिन स्टेटस आणि अनाउन्समेंट दोन्ही सिंक करा
+            await db.collection('meta').doc('adminStatus').set({ status: status });
+            await db.collection('meta').doc('announcement').set({ message: message });
+
+            const statusText = document.getElementById('systemStatusText');
+            statusText.innerText = status;
+            statusText.className = `text-xs font-bold flex items-center gap-2 ${status === 'LIVE' ? 'text-green-500' : status === 'COUNTER CLOSED' ? 'text-red-500' : 'text-yellow-500'}`;
+            alert(`System updated to ${status}`);
+        }
+
         async function callNext() {
             if (queue.length === 0) return alert("Queue is empty!");
             const next = queue[0];
             await db.collection('queue').doc(next.id).delete();
             await db.collection('meta').doc('currentServing').set({ token: next.token });
-            completed++;
-            document.getElementById('completedCount').innerText = completed;
-            window.speechSynthesis.speak(new SpeechSynthesisUtterance(`Next Token ${next.token}, ${next.name}`));
+            window.speechSynthesis.speak(new SpeechSynthesisUtterance(`Next Token ${next.token}`));
         }
 
         async function sendNotice() {
@@ -179,7 +176,7 @@
             if(!msg) return;
             await db.collection('meta').doc('announcement').set({ message: msg });
             document.getElementById('noticeInput').value = "";
-            alert("Broadcast sent!");
+            alert("Custom Notice Broadcasted!");
         }
 
         async function clearQueue() {
@@ -187,8 +184,6 @@
             const snap = await db.collection('queue').get();
             snap.forEach(d => d.ref.delete());
             await db.collection('meta').doc('currentServing').delete();
-            completed = 0;
-            document.getElementById('completedCount').innerText = 0;
         }
     </script>
 </body>
