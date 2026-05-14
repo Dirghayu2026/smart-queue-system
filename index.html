@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Queue - Student Portal</title>
+    <title>Smart Queue - College Student Portal</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -55,6 +55,7 @@
     </div>
 
     <div class="premium-card">
+        
         <div id="regForm">
             <i class="fas fa-university text-orange-500 text-3xl mb-4"></i>
             <h1 class="text-3xl font-black italic uppercase tracking-tighter">Smart <span class="text-orange-500">Queue</span></h1>
@@ -62,24 +63,42 @@
 
             <div class="input-group">
                 <label>Full Name</label>
-                <input type="text" id="name" placeholder="Enter Name" class="input-field">
+                <input type="text" id="name" placeholder="Enter Your Name" class="input-field">
             </div>
+            
             <div class="input-group">
                 <label>Mobile Number</label>
                 <input type="tel" id="phone" placeholder="91XXXXXXXX" class="input-field">
             </div>
+            
             <div class="input-group">
-                <label>Purpose</label>
+                <label>Purpose of Visit</label>
                 <select id="purpose" class="input-field appearance-none bg-[#1a1a1a]">
-                    <option value="Admission">Admission Enquiry</option>
-                    <option value="Fees">Fees Payment</option>
-                    <option value="Scholarship">Scholarship</option>
-                    <option value="Other">Other Office Work</option>
+                    <option value="Admission Enquiry">🏢 New Admission Enquiry</option>
+                    <option value="Fees Payment">💰 Academic Fees Payment</option>
+                    <option value="Document Verification">📄 Document Verification / Submission</option>
+                    <option value="Exam Section">✍️ Exam Section / Hall Ticket / Result</option>
+                    <option value="Scholarship">Scholarship Form Work</option>
+                    <option value="Library">📚 Library Counter Support</option>
+                    <option value="TC / Bonafide">🎖️ Leaving Certificate / Bonafide</option>
+                    <option value="Other Office Work">⚙️ General College Office Work</option>
                 </select>
             </div>
+
             <button onclick="register()" class="btn-primary">
                 GET DIGITAL TOKEN <i class="fas fa-chevron-right text-xs"></i>
             </button>
+        </div>
+
+        <div id="closedView" class="hidden text-center py-6">
+            <div class="w-20 h-20 bg-red-500/10 text-red-500 border border-red-500/30 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="fas fa-history text-3xl animate-pulse"></i>
+            </div>
+            <h2 class="text-2xl font-black uppercase text-red-500 tracking-tight mb-2">You Are Late!</h2>
+            <p class="text-zinc-400 text-sm font-semibold px-4 mb-6">Counter is closed for the day. Please come back tomorrow.</p>
+            <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-xl text-xs text-zinc-500 font-bold uppercase tracking-wider">
+                ⏰ Office Hours: 10:00 AM - 05:00 PM
+            </div>
         </div>
 
         <div id="statusView" class="hidden">
@@ -102,7 +121,6 @@
     </div>
 
     <script>
-        // 🔥 STRICTLY COMPAT INITIALIZATION
         const firebaseConfig = { 
             apiKey: "AIzaSyCFNZB5SBj2QoBJ6qF_pTkfAC3rVymEahM", 
             authDomain: "queuesystem-80e06.firebaseapp.com", 
@@ -113,14 +131,13 @@
         };
         
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore(); // Pure Compat Init
+        const db = firebase.firestore();
         
         let myTokenNumber = null;
         let hasAnnounced = false;
 
-        // १. रिअल-टाइम नोटीस बोर्ड
+        // Broadcast Notice System Listener
         db.collection('meta').doc('announcement').onSnapshot(doc => {
-            // जर मेसेज असेल तरच दाखवा
             if (doc.exists && doc.data().message) {
                 const banner = document.querySelector('.notice-banner p');
                 if(banner) banner.innerText = doc.data().message;
@@ -136,54 +153,59 @@
                 return alert("Please fill all details!");
             }
 
-            // 🔊 ऑडिओ सिस्टीम आधीच अनलॉक करा
-            window.speechSynthesis.cancel();
-            const unlock = new SpeechSynthesisUtterance("");
-            window.speechSynthesis.speak(unlock);
-
             try {
-                // 🔥 मोबाईलवरून येणारा डेटा सुरक्षितपणे ॲड करण्यासाठी 'Add' चा थेट वापर
+                // 🔥 ॲडमिन पॅनेलचा सध्याचा स्टेटस चेक करा
+                const statusDoc = await db.collection('meta').doc('adminStatus').get();
+                
+                if (statusDoc.exists && statusDoc.data().status === 'COUNTER CLOSED') {
+                    // जर काउंटर बंद असेल तर फॉर्म लपवून 'Late Notification' दाखवा
+                    document.getElementById('regForm').classList.add('hidden');
+                    document.getElementById('closedView').classList.remove('hidden');
+                    
+                    // ऑडिओ द्वारे चेतावणी द्या
+                    window.speechSynthesis.cancel();
+                    const closedMsg = new SpeechSynthesisUtterance("Counter is closed. Please come tomorrow.");
+                    window.speechSynthesis.speak(closedMsg);
+                    return; 
+                }
+
+                // जर काउंटर चालू असेल तर टोकन द्या
+                window.speechSynthesis.cancel();
+                const unlock = new SpeechSynthesisUtterance("");
+                window.speechSynthesis.speak(unlock);
+
                 const queueRef = db.collection('queue');
                 const logsRef = db.collection('logs');
                 
-                // टोकन नंबर मोजण्यासाठी डेटाबेस रीड
                 const snap = await queueRef.get();
                 const token = 101 + snap.size;
 
-                // डेटाबेसमध्ये एंट्री सबमिट करा
                 await queueRef.add({
-                    token: token,
-                    name: name,
-                    phone: phone,
-                    purpose: purpose,
-                    status: 'waiting',
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    token: token, name: name, phone: phone, purpose: purpose,
+                    status: 'waiting', timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
                 await logsRef.add({
                     time: new Date().toLocaleTimeString(),
                     action: 'JOINED',
-                    detail: `${token} - ${name}`,
+                    detail: `${token} - ${name} (${purpose})`,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                // स्क्रीन चेंज करा
                 myTokenNumber = token;
                 document.getElementById('regForm').classList.add('hidden');
                 document.getElementById('statusView').classList.remove('hidden');
                 document.getElementById('myToken').innerText = token;
                 
-                // ट्रॅकिंग चालू करा
                 startTracking();
 
             } catch (error) {
                 console.error("Firebase Error: ", error);
-                alert("Database Connection Failed! Please check internet or Firebase Rules.");
+                alert("Connection Interrupted! Please try again.");
             }
         }
 
         function startTracking() {
-            // २. रिअल-टाइम पोझिशन काउंट
             db.collection('queue').where('status', '==', 'waiting').orderBy('timestamp', 'asc').onSnapshot(snap => {
                 let list = []; 
                 snap.forEach(doc => list.push(doc.data().token));
@@ -193,7 +215,6 @@
                 }
             });
 
-            // ३. रिअल-टाइम व्हॉईस अलर्ट मॅनेजर
             db.collection('meta').doc('currentServing').onSnapshot((doc) => {
                 if (!doc.exists) return;
                 const serving = doc.data().token;
@@ -207,7 +228,6 @@
                         window.speechSynthesis.cancel(); 
                         const msg = new SpeechSynthesisUtterance(`Attention please! Token number ${myTokenNumber}, please proceed to the counter immediately.`);
                         msg.lang = 'en-US';
-                        msg.rate = 1.0; 
                         window.speechSynthesis.speak(msg);
                         hasAnnounced = true;
                     }
