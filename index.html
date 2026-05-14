@@ -94,17 +94,6 @@
             </button>
         </div>
 
-        <div id="closedView" class="hidden text-center py-6">
-            <div class="w-20 h-20 bg-red-500/10 text-red-500 border border-red-500/30 rounded-full flex items-center justify-center mx-auto mb-6">
-                <i class="fas fa-history text-3xl animate-pulse"></i>
-            </div>
-            <h2 class="text-2xl font-black uppercase text-red-500 tracking-tight mb-2">You Are Late!</h2>
-            <p class="text-zinc-400 text-sm font-semibold px-4 mb-6">Counter is closed for the day. Please come back tomorrow.</p>
-            <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-xl text-xs text-zinc-500 font-bold uppercase tracking-wider">
-                ⏰ Office Hours: 10:00 AM - 05:00 PM
-            </div>
-        </div>
-
         <div id="statusView" class="hidden">
             <h2 class="text-zinc-500 text-[11px] font-bold uppercase tracking-widest mb-4">Your Token</h2>
             <div id="myToken" class="token-circle">--</div>
@@ -140,7 +129,7 @@
         let myTokenNumber = null;
         let hasAnnounced = false;
 
-        // रिअल-टाइम नोटीस बोर्ड
+        // रिअल-टाइम नोटीस बोर्ड लिसनर
         db.collection('meta').doc('announcement').onSnapshot(doc => {
             if (doc.exists && doc.data().message) {
                 document.getElementById('bannerNoticeText').innerText = doc.data().message;
@@ -156,15 +145,7 @@
             window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
 
             try {
-                // ॲडमिन पॅनेलचा काउंटर क्लोज्ड स्टेटस चेक करा
-                const statusDoc = await db.collection('meta').doc('adminStatus').get();
-                if (statusDoc.exists && statusDoc.data().status === 'COUNTER CLOSED') {
-                    document.getElementById('regForm').style.display = 'none';
-                    document.getElementById('closedView').classList.remove('hidden');
-                    return;
-                }
-
-                // डायरेक्ट टोकन जनरेशन लॉजिक
+                // ⚡ डायरेक्ट अडथळ्याशिवाय टोकन जनरेशन (आधीसारखं ओरिजनल)
                 const snap = await db.collection('queue').get();
                 const token = 101 + snap.size;
 
@@ -175,15 +156,14 @@
 
                 myTokenNumber = token;
                 
-                // 🌟 परफेक्ट स्क्रीन टॉगल (खिचडी होणार नाही)
+                // स्क्रीन परफेक्ट टॉगल
                 document.getElementById('regForm').style.display = 'none';
-                document.getElementById('closedView').style.display = 'none';
                 document.getElementById('statusView').classList.remove('hidden');
                 document.getElementById('myToken').innerText = token;
                 
                 startTracking();
             } catch (e) { 
-                alert("Database Sync Timeout! Check Firebase Rules."); 
+                alert("Database Connection Error!"); 
             }
         }
 
