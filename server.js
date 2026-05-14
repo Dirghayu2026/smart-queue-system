@@ -7,35 +7,37 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 🔴 Firebase Setup
+// 🔴 FIREBASE SETUP
+// तुमची serviceAccountKey.json फाईल या सर्व्हरच्या सेम फोल्डरमध्ये ठेवा
 try {
     const serviceAccount = require("./serviceAccountKey.json");
     admin.initializeApp({
         credential: admin.credential.cert(serviceAccount)
     });
-    console.log("✅ Firebase Connected");
+    console.log("✅ Firebase Connected Successfully");
 } catch (e) {
-    console.log("❌ Firebase Key Error: ", e.message);
+    console.log("❌ Firebase Initialization Error: ", e.message);
 }
 
 const db = admin.firestore();
 
-// 🔴 Twilio Setup
-const accountSid = 'AC6948ca769baf497ecfb7c80f8725e647'; 
-const authToken = '81a1e2ab9ae9838ab1662664dc4ce27f';   
-const twilioNumber = '+15715967277'; 
+// 🔴 TWILIO SETUP (तुमचे क्रेडेंशियल्स इथे टाका)
+const accountSid = 'YOUR_TWILIO_ACCOUNT_SID'; 
+const authToken = 'YOUR_TWILIO_AUTH_TOKEN';   
+const twilioNumber = 'YOUR_TWILIO_PHONE_NUMBER'; 
 const client = new twilio(accountSid, authToken);
 
-// युजर रजिस्ट्रेशन API
+// १. विद्यार्थी नोंदणी API
 app.post('/api/register', async (req, res) => {
     try {
-        console.log("📩 Received Data:", req.body); // Render Logs मध्ये हे दिसेल
+        console.log("📩 Received Registration:", req.body);
         const { name, phone, purpose } = req.body;
 
         if (!name || !phone) {
-            return res.status(400).json({ success: false, error: "नाव आणि नंबर आवश्यक आहे" });
+            return res.status(400).json({ success: false, error: "Name and Phone are required" });
         }
 
+        // शेवटचा टोकन नंबर शोधून +1 करणे
         const snapshot = await db.collection('queue').orderBy('token', 'desc').limit(1).get();
         let nextToken = 101;
         if (!snapshot.empty) {
@@ -52,44 +54,80 @@ app.post('/api/register', async (req, res) => {
         };
 
         await db.collection('queue').add(student);
-        console.log(`✅ Token ${nextToken} saved to Firebase`);
-
-        // SMS (Optional - जर Twilio नसेल तर हा भाग कमेंट करा)
-        client.messages.create({
-            body: `Hi ${name}, your Token is #${nextToken}.`,
-            from: twilioNumber,
-            to: phone
-        }).catch(e => console.log("SMS Error: ", e.message));
+        
+        // ॲडमिन डॅशबोर्डवरील लॉगसाठी नोंद
+        await db.collection('logs').add({
+            time: new Date().toLocaleTimeString(),
+            action: 'JOINED',
+            detail: `${nextToken} - ${name} (${phone})`,
+            timestamp: admin.firestore.FieldValue.serverTimestamp()
+        });
 
         res.json({ success: true, token: nextToken });
     } catch (err) {
-        console.error("❌ API Error:", err);
+        console.error("❌ Registration Error:", err);
         res.status(500).json({ success: false, error: err.message });
     }
 });
 
-// कॉल स्टुडंट API
+// २. रिअल-टाईम व्हॉईस कॉल API (ॲडमिन पॅनेलवरून ट्रिगर होईल)
 app.post('/api/call-student', async (req, res) => {
     try {
         const { id, phone, name, token } = req.body;
+        console.log(`📞 Initiating Twilio Call to ${name} (${phone})`);
+
+        // क्यु मधील स्टेटस बदलणे
         await db.collection('queue').doc(id).update({ status: 'serving' });
+        
+        // लाईव्ह स्टेटस अपडेट (currentServing)
+        await db.collection('meta').doc('currentServing').set({ token: token });
 
-        client.calls.create({
-            twiml: `<Response><Say voice="alice">Hello ${name}, Token ${token}, please come.</Say></Response>`,
-            from: twilioNumber,
-            to: phone
-        }).catch(e => console.log("Call Error: ", e.message));
+        // Activity Log मध्ये नोंदणी
+        await db.collection('logs').add({
+            time: new Date().toLocaleTimeString(),
+            action: 'CALLED',
+            detail: `Token ${token} (${name}) called to counter.`,
+            timestamp: admin.firestore.FieldValue.serverTimestamp()
+        });
 
+        // 📱 Twilio Voice Call Logic
+        if (phone) {
+            // जर नंबरमध्ये +91 नसेल तर तो जोडणे
+            const formattedPhone = phone.startsWith('+') ? phone : '+91' + phone;
+            
+            await client.calls.create({
+                twiml: `<Response>
+                            <Say voice="alice">Hello ${name}. Your token number ${token} is being called. Please proceed to the counter immediately. Thank you.</Say>
+                        </Response>`,
+                from: twilioNumber,
+                to: formattedPhone
+            });
+            console.log("📲 Twilio Call Triggered Successfully");
+        }
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error("❌ Twilio Call Error:", err.message);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// ३. सर्व्हिस पूर्ण झाल्यावर क्लियर करणे
+app.post('/api/complete-student', async (req, res) => {
+    try {
+        const { id, token } = req.body;
+        await db.collection('queue').doc(id).delete();
+        await db.collection('meta').doc('currentServing').delete();
+        
+        await db.collection('logs').add({
+            time: new Date().toLocaleTimeString(),
+            action: 'COMPLETED',
+            detail: `Token ${token} service finished.`,
+            timestamp: admin.firestore.FieldValue.serverTimestamp()
+        });
         res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-app.get('/api/queue', async (req, res) => {
-    const snap = await db.collection('queue').where('status', '==', 'waiting').orderBy('timestamp', 'asc').get();
-    let q = [];
-    snap.forEach(doc => q.push({ id: doc.id, ...doc.data() }));
-    res.json(q);
-});
-
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Port ${PORT} live`));
+app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Queue Server Running on Port ${PORT}`));

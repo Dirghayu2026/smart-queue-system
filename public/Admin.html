@@ -304,42 +304,9 @@
             color: #666;
         }
 
-        /* ============ QR CODE ============ */
-        .qr-section {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .qr-image {
-            width: 180px;
-            height: 180px;
-            margin: 20px auto;
-            padding: 16px;
-            background: white;
-            border-radius: 8px;
-        }
-
-        .qr-image img {
-            width: 100%;
-            height: 100%;
-        }
-
-        .url-box {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 12px;
-            border-radius: 6px;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            color: #ff6b00;
-            word-break: break-all;
-            margin-bottom: 12px;
-        }
-
         /* ============ LOGS ============ */
         .log-container {
-            max-height: 300px;
+            max-height: 400px;
             overflow-y: auto;
             background: rgba(0, 0, 0, 0.3);
             border-radius: 8px;
@@ -492,26 +459,11 @@
                 </div>
             </div>
 
-            <!-- RIGHT: QR CODE & LOGS -->
-            <div>
-                <div class="card">
-                    <div class="card-title">📱 Student Registration</div>
-                    <div class="qr-section">
-                        <div>Scan to Register:</div>
-                        <div class="qr-image" id="qrCode"></div>
-                        <div class="url-box" id="urlBox">Loading...</div>
-                        <button class="btn btn-primary" onclick="copyUrl()">📋 Copy URL</button>
-                        <p style="margin-top: 12px; font-size: 12px; color: #666;">
-                            Students scan this QR → fill form → appear in queue
-                        </p>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-title">📜 Activity Log</div>
-                    <div id="logsList" class="log-container">
-                        <div class="log-empty">No activity yet</div>
-                    </div>
+            <!-- RIGHT: ONLY ACTIVITY LOG (QR removed) -->
+            <div class="card">
+                <div class="card-title">📜 Activity Log</div>
+                <div id="logsList" class="log-container">
+                    <div class="log-empty">No activity yet</div>
                 </div>
             </div>
         </div>
@@ -525,26 +477,54 @@
         // ║       FIREBASE CONFIGURATION - EDIT THIS SECTION      ║
         // ╚═══════════════════════════════════════════════════════╝
         
-       const firebaseConfig = {
-  apiKey: "AIzaSyCFNZB5SBj2QoBJ6qF_pTkfAC3rVymEahM",
-  authDomain: "queuesystem-80e06.firebaseapp.com",
-  projectId: "queuesystem-80e06",
-  storageBucket: "queuesystem-80e06.firebasestorage.app",
-  messagingSenderId: "30275507505",
-  appId: "1:30275507505:web:d00cc742ed42bb6f370c10",
-  measurementId: "G-54G6CL3L5Y"
-};
+        const firebaseConfig = {
+            apiKey: "AIzaSyCFNZB5SBj2QoBJ6qF_pTkfAC3rVymEahM",
+            authDomain: "queuesystem-80e06.firebaseapp.com",
+            projectId: "queuesystem-80e06",
+            storageBucket: "queuesystem-80e06.firebasestorage.app",
+            messagingSenderId: "30275507505",
+            appId: "1:30275507505:web:d00cc742ed42bb6f370c10",
+            measurementId: "G-54G6CL3L5Y"
+        };
 
         // ╔═══════════════════════════════════════════════════════╗
         // ║         NETWORK CONFIGURATION - EDIT THIS SECTION     ║
         // ╚═══════════════════════════════════════════════════════╝
         
-        const YOUR_IP = "192.168.137.56";  // Change to your IP address
-        const PORT = window.location.port || "5500";
+        const YOUR_IP = "192.168.137.56";  // Not used now (QR removed)
+        const PORT = window.location.port || "5500"; // Not used
 
         // ═══════════════════════════════════════════════════════
 
         firebase.initializeApp(firebaseConfig);
+        Notification.requestPermission();
+
+let notificationAudio = new Audio(
+  "https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg"
+);
+
+notificationAudio.preload = "auto";
+
+let audioReady = false;
+
+function unlockAudio() {
+
+    if (audioReady) return;
+
+    notificationAudio.play()
+    .then(() => {
+
+        notificationAudio.pause();
+
+        notificationAudio.currentTime = 0;
+
+        audioReady = true;
+
+        console.log("Audio Ready");
+
+    })
+    .catch(err => console.log(err));
+}
         const db = firebase.firestore();
 
         // Firestore Collections
@@ -658,14 +638,6 @@
             }
         }
 
-        function copyUrl() {
-            const userUrl = `https://smart-queue-system-o7hh.onrender.com/User.html`;
-            navigator.clipboard.writeText(userUrl).then(() => {
-                showToast('✓ URL copied to clipboard');
-            });
-        }
-
-        // ═══════════════════════════════════
         // ═══════════════════════════════════════════════════════
         // FIRESTORE LISTENERS
         // ═══════════════════════════════════════════════════════
@@ -776,27 +748,9 @@
             document.getElementById('completedCount').textContent = completed;
         }
 
-        // ═══════════════════════════════════════════════════════
-        // QR CODE GENERATION
-        // ═══════════════════════════════════════════════════════
+        // QR generation code removed
 
-        function generateQRCode() {
-            const userUrl = `http://${YOUR_IP}:${PORT}/user.html`;
-            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(userUrl)}`;
-
-            const qrCode = document.getElementById('qrCode');
-            qrCode.innerHTML = `<img src="${qrUrl}" alt="QR Code">`;
-
-            const urlBox = document.getElementById('urlBox');
-            urlBox.textContent = userUrl;
-        }
-
-        // ═══════════════════════════════════════════════════════
-        // INITIALIZATION
-        // ═══════════════════════════════════════════════════════
-
-        generateQRCode();
-        console.log('✓ Admin Panel Initialized');
+        console.log('✓ Admin Panel Initialized (QR removed)');
     </script>
 </body>
 </html>
