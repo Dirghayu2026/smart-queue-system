@@ -94,6 +94,17 @@
             </button>
         </div>
 
+        <div id="closedView" class="hidden text-center py-6">
+            <div class="w-20 h-20 bg-red-500/10 text-red-500 border border-red-500/30 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="fas fa-history text-3xl animate-pulse"></i>
+            </div>
+            <h2 class="text-2xl font-black uppercase text-red-500 tracking-tight mb-2">You Are Late!</h2>
+            <p class="text-zinc-400 text-sm font-semibold px-4 mb-6">Counter is closed for the day. Please come back tomorrow.</p>
+            <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-xl text-xs text-zinc-500 font-bold uppercase tracking-wider">
+                ⏰ Office Hours: 10:00 AM - 05:00 PM
+            </div>
+        </div>
+
         <div id="statusView" class="hidden">
             <h2 class="text-zinc-500 text-[11px] font-bold uppercase tracking-widest mb-4">Your Token</h2>
             <div id="myToken" class="token-circle">--</div>
@@ -128,15 +139,44 @@
         
         let myTokenNumber = null;
         let hasAnnounced = false;
+        let currentSystemStatus = "LIVE";
 
-        // रिअल-टाइम नोटीस बोर्ड लिसनर
+        // 🔥 १. रिअल-टाइम काउंटर स्टेटस आणि नोटीस ट्रॅकिंग सिस्टीम
         db.collection('meta').doc('announcement').onSnapshot(doc => {
             if (doc.exists && doc.data().message) {
                 document.getElementById('bannerNoticeText').innerText = doc.data().message;
             }
         });
 
+        // 🔥 २. ॲडमिन पॅनेलच्या 'Counter Closed' स्थितीवर बारीक लक्ष ठेवा
+        db.collection('meta').doc('adminStatus').onSnapshot(doc => {
+            if (doc.exists) {
+                currentSystemStatus = doc.data().status;
+                
+                // जर युजरने अजून टोकन काढलं नसेल (फॉर्म स्क्रीनवर असेल तरच चेंज करा)
+                if (myTokenNumber === null) {
+                    if (currentSystemStatus === 'COUNTER CLOSED') {
+                        document.getElementById('regForm').style.display = 'none';
+                        document.getElementById('statusView').style.display = 'none';
+                        document.getElementById('closedView').classList.remove('hidden');
+                        document.getElementById('closedView').style.display = 'block';
+                    } else {
+                        // जर स्टेटस LIVE, LUNCH किंवा TEA असेल तर मेसेज काढून पुन्हा फॉर्म दाखवा
+                        document.getElementById('closedView').style.display = 'none';
+                        document.getElementById('statusView').style.display = 'none';
+                        document.getElementById('regForm').style.display = 'block';
+                    }
+                }
+            }
+        });
+
         async function register() {
+            // जर बॅकएंड वरून क्लोज्ड असेल तर बटण क्लिक होऊनच देणार नाही
+            if (currentSystemStatus === 'COUNTER CLOSED') {
+                alert("Counter is closed. Cannot generate token!");
+                return;
+            }
+
             const name = document.getElementById('name').value.trim();
             const phone = document.getElementById('phone').value.trim();
             if (!name || !phone) return alert("Please fill all details!");
@@ -145,7 +185,6 @@
             window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
 
             try {
-                // ⚡ डायरेक्ट अडथळ्याशिवाय टोकन जनरेशन (आधीसारखं ओरिजनल)
                 const snap = await db.collection('queue').get();
                 const token = 101 + snap.size;
 
@@ -156,14 +195,16 @@
 
                 myTokenNumber = token;
                 
-                // स्क्रीन परफेक्ट टॉगल
+                // टोकन निघाल्यावर फॉर्म आणि क्लोज्ड व्ह्यू दोन्ही कायमचे बंद करा आणि टोकन स्क्रीन दाखवा
                 document.getElementById('regForm').style.display = 'none';
+                document.getElementById('closedView').style.display = 'none';
                 document.getElementById('statusView').classList.remove('hidden');
+                document.getElementById('statusView').style.display = 'block';
                 document.getElementById('myToken').innerText = token;
                 
                 startTracking();
             } catch (e) { 
-                alert("Database Connection Error!"); 
+                alert("Database Sync Error!"); 
             }
         }
 
