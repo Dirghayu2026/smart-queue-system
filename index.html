@@ -9,106 +9,176 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-thumb { background: #ff6b00; border-radius: 10px; }
         body { 
-            background: radial-gradient(circle at top right, #1e1e1e, #000000); 
+            background: #000000; 
             color: #ffffff; 
             font-family: 'Inter', sans-serif; 
-            overflow-x: hidden;
-        }
-        .premium-card { 
-            background: rgba(255, 255, 255, 0.03); 
-            backdrop-filter: blur(15px); 
-            border: 1px solid rgba(255, 107, 0, 0.2); 
-            border-radius: 24px; 
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            max-height: 90vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
             overflow-y: auto;
         }
-        .token-display {
-            background: linear-gradient(145deg, #1a1a1a, #252525);
-            border: 2px solid #ff6b00;
-            box-shadow: 0 0 30px rgba(255, 107, 0, 0.15);
+
+        /* 📢 Top Banner Style */
+        .notice-banner {
+            background: rgba(255, 107, 0, 0.1);
+            border: 1px solid #ff6b00;
+            border-radius: 12px;
+            padding: 15px;
+            width: 90%;
+            max-width: 450px;
+            position: fixed;
+            top: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 50;
         }
-        .notice-shimmer {
-            background: linear-gradient(90deg, #ff6b00, #ffb347, #ff6b00);
-            background-size: 200% auto;
-            animation: shimmer 3s linear infinite;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+
+        .premium-card { 
+            background: #111111; 
+            border: 1px solid #333333; 
+            border-radius: 28px; 
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            margin-top: 80px;
         }
-        @keyframes shimmer { to { background-position: 200% center; } }
-        .input-focus:focus { border-color: #ff6b00; box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.2); }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        .input-group label {
+            font-size: 10px;
+            font-weight: 800;
+            color: #ff6b00;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .input-field {
+            width: 100%;
+            background: #1a1a1a;
+            border: 1px solid #333333;
+            border-radius: 12px;
+            padding: 15px;
+            color: white;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .input-field:focus {
+            border-color: #ff6b00;
+            background: #222222;
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: #ff6b00;
+            color: white;
+            font-weight: 800;
+            padding: 18px;
+            border-radius: 15px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: 0.3s;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: #e65a00;
+            transform: translateY(-2px);
+        }
+
+        /* 🎫 Token Display Area */
+        .token-circle {
+            width: 150px;
+            height: 150px;
+            border: 4px solid #ff6b00;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-weight: 900;
+            color: #ff6b00;
+            margin: 20px auto;
+            box-shadow: 0 0 20px rgba(255, 107, 0, 0.2);
+        }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-6">
+<body>
 
-    <!-- 📢 LIVE NOTICE BANNER -->
-    <div id="noticeBanner" class="fixed top-6 left-1/2 -translate-x-1/2 w-[90%] max-w-lg z-50 hidden">
-        <div class="bg-zinc-900/90 border border-orange-500/50 backdrop-blur-md p-4 rounded-2xl shadow-2xl flex items-center gap-4">
-            <div class="bg-orange-500 p-2 rounded-lg animate-pulse">
-                <i class="fas fa-bullhorn text-black text-sm"></i>
-            </div>
-            <p id="noticeText" class="text-sm font-bold notice-shimmer uppercase tracking-wider italic">Loading Update...</p>
-        </div>
+    <!-- Banner -->
+    <div class="notice-banner">
+        <i class="fas fa-bullhorn text-orange-500"></i>
+        <p class="text-[11px] font-bold text-orange-500 uppercase italic leading-tight">
+            STUDENT HAVE TO COME TO COUNTER WHEN WE CALL THE TOKEN NUMBER WITH NAME
+        </p>
     </div>
 
-    <div class="premium-card p-10 w-full max-w-md relative">
+    <!-- Main Card -->
+    <div class="premium-card">
         <div id="regForm">
-            <div class="text-center mb-10">
-                <div class="inline-block p-3 bg-orange-500/10 rounded-2xl mb-4">
-                    <i class="fas fa-university text-orange-500 text-3xl"></i>
-                </div>
-                <h2 class="text-4xl font-black tracking-tighter text-white uppercase italic">Smart <span class="text-orange-500">Queue</span></h2>
-                <p class="text-zinc-500 text-sm mt-2 font-semibold">Digital Student Portal</p>
+            <i class="fas fa-university text-orange-500 text-3xl mb-4"></i>
+            <h1 class="text-3xl font-black italic uppercase tracking-tighter">Smart <span class="text-orange-500">Queue</span></h1>
+            <p class="text-zinc-500 text-[11px] font-bold mb-8">Digital Student Portal</p>
+
+            <div class="input-group">
+                <label>Full Name</label>
+                <input type="text" id="name" placeholder="Enter Name" class="input-field">
             </div>
 
-            <div class="space-y-6">
-                <div class="relative">
-                    <label class="text-[10px] font-bold text-orange-500 uppercase tracking-widest absolute -top-2 left-3 bg-[#131313] px-2 z-10">Full Name</label>
-                    <input type="text" id="name" placeholder="Enter Name" class="w-full bg-transparent border border-zinc-800 rounded-xl p-4 text-white outline-none input-focus transition-all">
-                </div>
-                <div class="relative">
-                    <label class="text-[10px] font-bold text-orange-500 uppercase tracking-widest absolute -top-2 left-3 bg-[#131313] px-2 z-10">Mobile Number</label>
-                    <input type="tel" id="phone" placeholder="91XXXXXXXX" class="w-full bg-transparent border border-zinc-800 rounded-xl p-4 text-white outline-none input-focus transition-all">
-                </div>
-                <div class="relative">
-                    <label class="text-[10px] font-bold text-orange-500 uppercase tracking-widest absolute -top-2 left-3 bg-[#131313] px-2 z-10">Purpose</label>
-                    <select id="purpose" class="w-full bg-[#131313] border border-zinc-800 rounded-xl p-4 text-zinc-400 outline-none input-focus appearance-none">
-                        <option value="Admission">Admission Enquiry</option>
-                        <option value="Fees">Fees Payment</option>
-                        <option value="Scholarship">Scholarship</option>
-                        <option value="Other">Other Office Work</option>
-                    </select>
-                </div>
-                <button onclick="register()" class="w-full bg-orange-600 hover:bg-orange-500 text-white font-black py-5 rounded-2xl shadow-xl transition-all flex items-center justify-center gap-3">
-                    <span>GET DIGITAL TOKEN</span>
-                    <i class="fas fa-chevron-right text-xs"></i>
-                </button>
+            <div class="input-group">
+                <label>Mobile Number</label>
+                <input type="tel" id="phone" placeholder="91XXXXXXXX" class="input-field">
             </div>
+
+            <div class="input-group">
+                <label>Purpose</label>
+                <select id="purpose" class="input-field appearance-none bg-[#1a1a1a]">
+                    <option value="Admission">Admission Enquiry</option>
+                    <option value="Fees">Fees Payment</option>
+                    <option value="Scholarship">Scholarship</option>
+                    <option value="Other">Other Office Work</option>
+                </select>
+            </div>
+
+            <button onclick="register()" class="btn-primary">
+                GET DIGITAL TOKEN <i class="fas fa-chevron-right text-xs"></i>
+            </button>
         </div>
 
-        <div id="statusView" class="hidden text-center">
-            <p class="text-zinc-500 text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Secured Token</p>
-            <div id="myToken" class="token-display w-32 h-32 rounded-[2rem] flex items-center justify-center text-5xl font-black text-orange-500 mx-auto mb-8">--</div>
-            <div id="positionCard" class="bg-orange-500/5 border border-orange-500/20 p-6 rounded-3xl mb-8">
-                <h3 id="positionText" class="text-2xl font-bold text-white tracking-tight">Syncing...</h3>
+        <!-- Token View -->
+        <div id="statusView" class="hidden">
+            <h2 class="text-zinc-500 text-[11px] font-bold uppercase tracking-widest mb-4">Your Token</h2>
+            <div id="myToken" class="token-circle">--</div>
+            <div id="positionCard" class="bg-orange-500/10 border border-orange-500/30 p-5 rounded-2xl mb-6">
+                <p id="positionText" class="text-xl font-bold text-white">Wait for call...</p>
             </div>
-            <div class="grid grid-cols-2 gap-4 mb-6">
-                <div class="bg-zinc-900/50 p-4 rounded-2xl border border-zinc-800">
-                    <p class="text-[10px] text-zinc-500 uppercase font-bold mb-1">Serving</p>
+            <div class="flex gap-4">
+                <div class="flex-1 bg-zinc-900 p-4 rounded-xl border border-zinc-800">
+                    <p class="text-[10px] text-zinc-500 font-bold uppercase">Now Serving</p>
                     <p id="nowServing" class="text-xl font-bold text-orange-500">—</p>
                 </div>
-                <div class="bg-zinc-900/50 p-4 rounded-2xl border border-zinc-800">
-                    <p class="text-[10px] text-zinc-500 uppercase font-bold mb-1">Wait Time</p>
+                <div class="flex-1 bg-zinc-900 p-4 rounded-xl border border-zinc-800">
+                    <p class="text-[10px] text-zinc-500 font-bold uppercase">Est. Wait</p>
                     <p id="estWait" class="text-xl font-bold text-orange-500">0 min</p>
                 </div>
             </div>
-            <p class="text-[10px] text-zinc-600 uppercase tracking-widest font-bold flex items-center justify-center gap-2">
-                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Voice Alert Active
-            </p>
         </div>
     </div>
 
@@ -119,25 +189,18 @@
         let myTokenNumber = null;
         let hasAnnounced = false;
 
-        db.collection('meta').doc('announcement').onSnapshot(doc => {
-            if (doc.exists) {
-                document.getElementById('noticeBanner').classList.remove('hidden');
-                document.getElementById('noticeText').innerText = doc.data().message;
-            }
-        });
-
         async function register() {
             const name = document.getElementById('name').value;
             const phone = document.getElementById('phone').value;
-            if (!name || !phone) return alert("Please enter details!");
-            window.speechSynthesis.speak(new SpeechSynthesisUtterance("")); // Force Unlock Audio
+            if (!name || !phone) return alert("Fill details!");
+            window.speechSynthesis.speak(new SpeechSynthesisUtterance("")); // Unlock Voice
 
             const logs = await db.collection('logs').where('action', '==', 'JOINED').get();
             const token = 101 + logs.size;
 
             await db.collection('queue').add({
-                token: token, name: name, phone: phone, purpose: document.getElementById('purpose').value,
-                status: 'waiting', timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                token: token, name: name, phone: phone, status: 'waiting', 
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
 
             myTokenNumber = token;
@@ -149,8 +212,7 @@
 
         function startTracking() {
             db.collection('queue').where('status', '==', 'waiting').orderBy('timestamp', 'asc').onSnapshot(snap => {
-                let list = [];
-                snap.forEach(doc => list.push(doc.data().token));
+                let list = []; snap.forEach(doc => list.push(doc.data().token));
                 const pos = list.indexOf(myTokenNumber) + 1;
                 if (pos > 0) {
                     document.getElementById('positionText').innerText = `You are #${pos} in line`;
@@ -162,11 +224,9 @@
                 const serving = doc.exists ? doc.data().token : null;
                 document.getElementById('nowServing').innerText = serving || "—";
                 if (serving && serving == myTokenNumber) {
-                    document.getElementById('positionText').innerText = "IT IS YOUR TURN!";
-                    document.getElementById('positionCard').className = "bg-green-500/20 border border-green-500/50 p-6 rounded-3xl mb-8 animate-pulse";
+                    document.getElementById('positionText').innerText = "IT'S YOUR TURN! GO NOW";
                     if (!hasAnnounced) {
-                        const msg = new SpeechSynthesisUtterance(`Attention please! Token number ${myTokenNumber}, please proceed to the counter immediately.`);
-                        msg.lang = 'en-US';
+                        const msg = new SpeechSynthesisUtterance(`Token ${myTokenNumber}, Please proceed to the counter.`);
                         window.speechSynthesis.speak(msg);
                         hasAnnounced = true;
                     }
