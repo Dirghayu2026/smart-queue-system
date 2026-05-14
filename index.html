@@ -183,56 +183,74 @@
     </div>
 
     <script>
-        const firebaseConfig = { apiKey: "AIzaSyCFNZB5SBj2QoBJ6qF_pTkfAC3rVymEahM", authDomain: "queuesystem-80e06.firebaseapp.com", projectId: "queuesystem-80e06", storageBucket: "queuesystem-80e06.firebasestorage.app", messagingSenderId: "30275507505", appId: "1:30275507505:web:d00cc742ed42bb6f370c10" };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        let myTokenNumber = null;
-        let hasAnnounced = false;
+    // ... आधीचा Firebase Config ...
+    const db = firebase.firestore();
+    let myTokenNumber = null;
+    let hasAnnounced = false;
 
-        async function register() {
-            const name = document.getElementById('name').value;
-            const phone = document.getElementById('phone').value;
-            if (!name || !phone) return alert("Fill details!");
-            window.speechSynthesis.speak(new SpeechSynthesisUtterance("")); // Unlock Voice
+    // 🔊 १. ऑडिओ पूर्णपणे फोर्स-अनलॉक करा
+    async function register() {
+        const name = document.getElementById('name').value;
+        const phone = document.getElementById('phone').value;
+        if (!name || !phone) return alert("Please enter details!");
 
-            const logs = await db.collection('logs').where('action', '==', 'JOINED').get();
-            const token = 101 + logs.size;
+        // ⚡ ट्रिक: युजरने बटण दाबल्या क्षणी एक रिकामं स्पीच रन करा
+        // यामुळे ब्राउझरचं 'Autoplay Block' कायमचं निघून जातं
+        const unlock = new SpeechSynthesisUtterance("Welcome");
+        unlock.volume = 0; // युजरला काही ऐकू जाणार नाही, पण ब्राउझर अनलॉक होईल
+        window.speechSynthesis.speak(unlock);
 
-            await db.collection('queue').add({
-                token: token, name: name, phone: phone, status: 'waiting', 
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
+        const logs = await db.collection('logs').where('action', '==', 'JOINED').get();
+        const token = 101 + logs.size;
 
-            myTokenNumber = token;
-            document.getElementById('regForm').classList.add('hidden');
-            document.getElementById('statusView').classList.remove('hidden');
-            document.getElementById('myToken').innerText = token;
-            startTracking();
-        }
+        await db.collection('queue').add({
+            token: token, name: name, phone: phone, status: 'waiting', 
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
 
-        function startTracking() {
-            db.collection('queue').where('status', '==', 'waiting').orderBy('timestamp', 'asc').onSnapshot(snap => {
-                let list = []; snap.forEach(doc => list.push(doc.data().token));
-                const pos = list.indexOf(myTokenNumber) + 1;
-                if (pos > 0) {
-                    document.getElementById('positionText').innerText = `You are #${pos} in line`;
-                    document.getElementById('estWait').innerText = `${pos * 5} min`;
+        myTokenNumber = token;
+        document.getElementById('regForm').classList.add('hidden');
+        document.getElementById('statusView').classList.remove('hidden');
+        document.getElementById('myToken').innerText = token;
+        startTracking();
+    }
+
+    function startTracking() {
+        // २. क्यु पोझिशन अपडेट (आधीसारखंच)
+        db.collection('queue').where('status', '==', 'waiting').orderBy('timestamp', 'asc').onSnapshot(snap => {
+            let list = []; snap.forEach(doc => list.push(doc.data().token));
+            const pos = list.indexOf(myTokenNumber) + 1;
+            if (pos > 0) {
+                document.getElementById('positionText').innerText = `You are #${pos} in line`;
+            }
+        });
+
+        // ३. 🎯 तातडीचा व्हॉईस अलर्ट
+        db.collection('meta').doc('currentServing').onSnapshot((doc) => {
+            if (!doc.exists) return;
+            const serving = doc.data().token;
+            document.getElementById('nowServing').innerText = serving || "—";
+            
+            if (serving == myTokenNumber) {
+                document.getElementById('positionText').innerText = "IT'S YOUR TURN! GO NOW";
+                
+                if (!hasAnnounced) {
+                    // आवाज येण्यासाठी स्पीच सिंथेसिस इंजिन रिफ्रेश करा
+                    window.speechSynthesis.cancel(); 
+                    
+                    const msg = new SpeechSynthesisUtterance(`Attention please! Token number ${myTokenNumber}, it is your turn. Please proceed to the counter.`);
+                    msg.lang = 'en-US';
+                    msg.rate = 0.9; // थोडा हळू आवाज जेणेकरून स्पष्ट ऐकू येईल
+                    msg.volume = 1.0; // फुल वॉल्यूम
+                    
+                    window.speechSynthesis.speak(msg);
+                    hasAnnounced = true;
                 }
-            });
-
-            db.collection('meta').doc('currentServing').onSnapshot(doc => {
-                const serving = doc.exists ? doc.data().token : null;
-                document.getElementById('nowServing').innerText = serving || "—";
-                if (serving && serving == myTokenNumber) {
-                    document.getElementById('positionText').innerText = "IT'S YOUR TURN! GO NOW";
-                    if (!hasAnnounced) {
-                        const msg = new SpeechSynthesisUtterance(`Token ${myTokenNumber}, Please proceed to the counter.`);
-                        window.speechSynthesis.speak(msg);
-                        hasAnnounced = true;
-                    }
-                } else { hasAnnounced = false; }
-            });
-        }
-    </script>
+            } else {
+                hasAnnounced = false;
+            }
+        });
+    }
+</script>
 </body>
 </html>
