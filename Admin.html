@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Queue - Elite Admin Pro Max</title>
+    <title>Smart Queue - Admin Dashboard</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -50,8 +50,8 @@
         <div id="dashboard-tab" class="tab-content active">
             <header class="flex justify-between items-start mb-8 no-print">
                 <div>
-                    <h1 class="text-3xl font-extrabold tracking-tight uppercase italic">Admin <span class="text-orange-500">Pro Max</span></h1>
-                    <p class="text-zinc-500 text-sm font-medium uppercase tracking-widest text-[10px]">DBATU Command Center</p>
+                    <h1 class="text-3xl font-extrabold tracking-tight uppercase italic">Admin <span class="text-orange-500">Dashboard</span></h1>
+                    <p class="text-zinc-500 text-sm font-medium uppercase tracking-widest text-[10px]">Queue Management System</p>
                 </div>
                 <div class="flex gap-4">
                     <div class="glass-panel px-6 py-3 rounded-2xl text-center border-b-2 border-orange-500">
@@ -182,7 +182,6 @@
 
         function toggleMute() { isMuted = !isMuted; document.getElementById('volBtn').className = `fas fa-volume-${isMuted ? 'mute' : 'up'} nav-icon text-xl ${isMuted ? 'text-red-500' : ''}`; }
 
-        // Live Queue Tracking
         db.collection('queue').orderBy('timestamp', 'asc').onSnapshot(snap => {
             queue = []; let html = "";
             snap.forEach(doc => { 
@@ -198,11 +197,9 @@
         db.collection('logs').onSnapshot(snap => { document.getElementById('totalToday').innerText = snap.size; });
 
         async function setCounterStatus(status) {
-            // Buttons Highlight Logic
             document.querySelectorAll('[id^="btn-"]').forEach(btn => btn.classList.remove('status-btn-active'));
             let activeId = `btn-${status.split(' ')[0]}`;
             if(document.getElementById(activeId)) document.getElementById(activeId).classList.add('status-btn-active');
-
             await db.collection('meta').doc('adminStatus').set({ status: status });
             await db.collection('meta').doc('announcement').set({ message: `Counter is now ${status}` });
         }
@@ -212,15 +209,12 @@
             const next = queue[0];
             await db.collection('queue').doc(next.id).delete();
             await db.collection('meta').doc('currentServing').set({ token: next.token });
-            
-            // Log to history with purpose
             await db.collection('logs').add({
                 time: new Date().toLocaleTimeString(),
                 detail: `${next.token} - ${next.name}`,
                 purpose: next.purpose || 'General',
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
-
             if(!isMuted) { window.speechSynthesis.cancel(); window.speechSynthesis.speak(new SpeechSynthesisUtterance(`Next Token ${next.token}, ${next.name}`)); }
         }
 
@@ -234,7 +228,6 @@
                     const name = d.detail ? d.detail.split(' - ')[1] : 'Unknown';
                     const p = d.purpose || 'Other';
                     let row = `<tr class="border-b border-white/5 hover:bg-white/[0.02]"><td class="px-8 py-4 text-zinc-500 text-[10px]">${d.time || 'N/A'}</td><td class="px-8 py-4 font-bold text-zinc-300">${name}</td><td class="px-8 py-4 text-right font-black text-orange-500 italic">#${token}</td></tr>`;
-                    
                     if (p.includes('Fees')) { feesHtml += row; feesC++; }
                     else { othersHtml += row; if(p.includes('Admission')) admC++; else otherC++; }
                 });
